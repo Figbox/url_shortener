@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body, Depends
+from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.core.database_engine.DbAdaptor import DbAdaptor
@@ -9,16 +10,17 @@ from app.modules.url_shortener.table import UrlShortenerTable
 
 class UrlShortener(ApiModule, TableModule):
     def _register_api_bp(self, bp: APIRouter):
+
         # テーブル関連
         @bp.post('/create', description='create data to table')
-        def create(dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba),
+        def create(request: Request, dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba),
                    target_url: str = Body(..., embed=True)):
             """create a new url shortening"""
-            return urls_crud.random_create(dba, target_url)
-
-        # @bp.delete('/delete', description='delete a data')
-        # def delete(id: int, dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba)):
-        #     ...
+            rt = urls_crud.random_create(dba, target_url)
+            # リンクの前に付く文字列を作成
+            prefix = f'{request.base_url.scheme}://{request.base_url.netloc}'
+            rt['link'] = f'{prefix}/{rt["link"]}'
+            return rt
 
         # 一番短いのプレフィックスのは何もないこと↓
         main_bp = self._register_free_prefix('', 'main')
