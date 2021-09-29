@@ -2,7 +2,7 @@ import random
 import string
 from typing import Optional
 
-from app.core.database_engine.DbAdaptor import DbAdaptor
+from app.core.adaptor.DbAdaptor import DbAdaptor
 from app.modules.url_shortener.table import UrlShortenerTable
 
 
