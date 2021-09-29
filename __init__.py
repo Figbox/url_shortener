@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Body, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Body, Depends, HTTPException
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
@@ -19,8 +21,18 @@ class UrlShortener(ApiModule, TableModule):
             rt = urls_crud.random_create(dba, target_url)
             # リンクの前に付く文字列を作成
             prefix = f'{request.base_url.scheme}://{request.base_url.netloc}'
-            rt['link'] = f'{prefix}/{rt["link"]}'
+            rt['short_url'] = f'{prefix}/{rt["link"]}'
             return rt
+
+        @bp.delete('/delete', description='IDかリンクかでデータを削除する')
+        def delete(id: Optional[int] = None, link: Optional[str] = None,
+                   dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba)):
+            if id is not None:
+                dba.delete(id)
+                return {'count': 1}
+            if link is not None:
+                return dba.delete_by(link=link)
+            raise HTTPException(422, 'you cannot input None with twice.')
 
         # 一番短いのプレフィックスのは何もないこと↓
         main_bp = self._register_free_prefix('', 'main')
