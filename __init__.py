@@ -5,6 +5,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from app.core.adaptor.DbAdaptor import DbAdaptor
+from app.core.adaptor.ListAdaptor import ListAdaptor
 from app.core.module_class import TableModule, ApiModule
 from app.modules.url_shortener import urls_crud
 from app.modules.url_shortener.table import UrlShortenerTable
@@ -33,6 +34,10 @@ class UrlShortener(ApiModule, TableModule):
             if link is not None:
                 return dba.delete_by(link=link)
             raise HTTPException(422, 'you cannot input None with twice.')
+
+        @bp.get('/list',summary='リスト表示', description='リストを表示')
+        def list_data(list_adaptor: ListAdaptor = Depends()):
+            return list_adaptor.search(UrlShortenerTable)
 
         # 一番短いのプレフィックスのは何もないこと↓
         main_bp = self._register_free_prefix('', 'main')
