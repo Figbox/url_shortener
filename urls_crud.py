@@ -10,6 +10,9 @@ def random_create(dba: DbAdaptor, target_url: str, link_len: int = 5):
     """ランダムにショットリンクを与える"""
     # ランダムにストリング型を生成する
     random_str = ''.join(random.sample(string.ascii_letters, link_len))
+    row = dba.read_by(link=random_str)
+    if row is not None:
+        return None
     data = UrlShortenerTable(link=random_str,
                              target_url=target_url)
     return dba.add(data)

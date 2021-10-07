@@ -15,21 +15,29 @@ class UrlShortener(ApiModule, TableModule):
     def _register_api_bp(self, bp: APIRouter):
 
         # テーブル関連
-        @bp.post('/create', summary='短縮URLを作成', description='create data to table')
+        @bp.post('/create', summary='短縮URLを作成',
+                 description='create data to table，もしランダムに作成する短縮URL'
+                             'のlinkが被った時に(503,"resource collision")のエラーが出る')
         def create(request: Request, dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba),
                    target_url: str = Body(..., embed=True)):
             """create a new url shortening"""
             rt = urls_crud.random_create(dba, target_url)
+            if rt is None:
+                raise HTTPException(503, 'resource collision')
             # リンクの前に付く文字列を作成
             prefix = f'{request.base_url.scheme}://{request.base_url.netloc}'
             rt['short_url'] = f'{prefix}/{rt["link"]}'
             return rt
 
-        @bp.put('/create', summary='短縮URLを作成（冪等性）', description='冪等性(べきとうせい)に短縮URLを作成')
+        @bp.put('/create', summary='短縮URLを作成（冪等性）',
+                description='冪等性(べきとうせい)に短縮URLを作成、もしランダムに作成する短縮URL'
+                            'のlinkが被った時に(503,"resource collision")のエラーが出る')
         def put_create(request: Request, dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba),
                        target_url: str = Body(..., embed=True)):
             """create a new url shortening"""
             rt = urls_crud.put_create(dba, target_url)
+            if rt is None:
+                raise HTTPException(503, 'resource collision')
             # リンクの前に付く文字列を作成
             prefix = f'{request.base_url.scheme}://{request.base_url.netloc}'
             rt['short_url'] = f'{prefix}/{rt["link"]}'
