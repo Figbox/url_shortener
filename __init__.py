@@ -15,7 +15,7 @@ class UrlShortener(ApiModule, TableModule):
     def _register_api_bp(self, bp: APIRouter):
 
         # テーブル関連
-        @bp.post('/create', description='create data to table')
+        @bp.post('/create', summary='短縮URLを作成', description='create data to table')
         def create(request: Request, dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba),
                    target_url: str = Body(..., embed=True)):
             """create a new url shortening"""
@@ -25,17 +25,20 @@ class UrlShortener(ApiModule, TableModule):
             rt['short_url'] = f'{prefix}/{rt["link"]}'
             return rt
 
+        @bp.put('/create', summary='短縮URLを作成', description='冪等性(べきとうせい)に短縮URLを作成')
+        def put_create():
+            ...
+
         @bp.delete('/delete', description='IDかリンクかでデータを削除する')
         def delete(id: Optional[int] = None, link: Optional[str] = None,
                    dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba)):
             if id is not None:
-                dba.delete(id)
-                return {'count': 1}
+                return dba.delete(id)
             if link is not None:
                 return dba.delete_by(link=link)
             raise HTTPException(422, 'you cannot input None with twice.')
 
-        @bp.get('/list',summary='リスト表示', description='リストを表示')
+        @bp.get('/list', summary='リスト表示', description='リストを表示')
         def list_data(list_adaptor: ListAdaptor = Depends()):
             return list_adaptor.search(UrlShortenerTable)
 
