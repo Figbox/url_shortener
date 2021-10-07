@@ -25,9 +25,15 @@ class UrlShortener(ApiModule, TableModule):
             rt['short_url'] = f'{prefix}/{rt["link"]}'
             return rt
 
-        @bp.put('/create', summary='短縮URLを作成', description='冪等性(べきとうせい)に短縮URLを作成')
-        def put_create():
-            ...
+        @bp.put('/create', summary='短縮URLを作成（冪等性）', description='冪等性(べきとうせい)に短縮URLを作成')
+        def put_create(request: Request, dba: DbAdaptor = Depends(DbAdaptor(UrlShortenerTable).dba),
+                       target_url: str = Body(..., embed=True)):
+            """create a new url shortening"""
+            rt = urls_crud.put_create(dba, target_url)
+            # リンクの前に付く文字列を作成
+            prefix = f'{request.base_url.scheme}://{request.base_url.netloc}'
+            rt['short_url'] = f'{prefix}/{rt["link"]}'
+            return rt
 
         @bp.delete('/delete', description='IDかリンクかでデータを削除する')
         def delete(id: Optional[int] = None, link: Optional[str] = None,
