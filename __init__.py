@@ -53,8 +53,16 @@ class UrlShortener(ApiModule, TableModule):
             raise HTTPException(422, 'you cannot input None with twice.')
 
         @bp.get('/list', summary='リスト表示', description='リストを表示')
-        def list_data(list_adaptor: ListAdaptor = Depends()):
-            return list_adaptor.search(UrlShortenerTable)
+        def list_data(request: Request, list_adaptor: ListAdaptor = Depends()):
+            # リンクの前に付く文字列を作成
+            prefix = f'{request.base_url.scheme}://{request.base_url.netloc}'
+
+            def map_filter(inp: dict):
+                inp['short_url'] = f'{prefix}/{inp["link"]}'
+                return inp
+
+            rt = list_adaptor.search(UrlShortenerTable, map_filter)
+            return rt
 
         # 一番短いのプレフィックスのは何もないこと↓
         main_bp = self._register_free_prefix('', 'main')
